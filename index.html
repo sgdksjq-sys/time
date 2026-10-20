@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Por qué cuesta tanto soltarte 🌧</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300;1,500;1,600&family=Outfit:wght@200;300;400&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --amber:#e8a840;--amber2:#f5cc80;--amber3:#fde8b0;
+      --rose:#d45070;--rose2:#e8809a;
+      --deep:#08050e;--card:#0d0916;
+      --t:rgba(250,240,220,.92);--tm:rgba(220,200,170,.42);--ts:rgba(220,200,170,.65);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{height:100%;-webkit-text-size-adjust:100%;}
+    body{
+      min-height:100dvh;background:var(--deep);
+      font-family:'Outfit',sans-serif;color:var(--t);
+      overflow-x:hidden;overflow-y:auto;position:relative;
+    }
+
+    /* ── CANVAS LAYERS ── */
+    #bgc,#rainc,#shapec{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;}
+    #bgc{z-index:0;}#rainc{z-index:1;}#shapec{z-index:2;}
+
+    /* ── SCREENS ── */
+    .screen{
+      position:relative;z-index:3;
+      width:100%;min-height:100dvh;
+      display:flex;align-items:center;justify-content:center;
+      padding:env(safe-area-inset-top,1rem) clamp(.9rem,5vw,2rem) env(safe-area-inset-bottom,1rem);
+    }
+    #lockScreen{display:flex;}
+    #musicScreen{display:none;align-items:flex-start;padding-top:clamp(1.5rem,6vw,3rem);padding-bottom:clamp(1.5rem,6vw,3rem);}
+
+    /* ── CARD BASE ── */
+    .card{
+      width:100%;
+      background:rgba(10,6,20,.85);
+      border:1px solid rgba(232,168,64,.14);
+      border-radius:6px;
+      position:relative;overflow:hidden;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
+    .card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent,var(--amber),var(--amber2),var(--amber),transparent);
+      animation:topbar 4s ease-in-out infinite;
+    }
+    @keyframes topbar{0%,100%{opacity:.4}50%{opacity:1}}
+
+    .card::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(212,80,112,.3),transparent);
+    }
+
+    /* Corners */
+    .cn{position:absolute;width:12px;height:12px;border-color:rgba(232,168,64,.4);border-style:solid;}
+    .tl{top:7px;left:7px;border-width:1.5px 0 0 1.5px;}
+    .tr{top:7px;right:7px;border-width:1.5px 1.5px 0 0;}
+    .bl{bottom:7px;left:7px;border-width:0 0 1.5px 1.5px;}
+    .br{bottom:7px;right:7px;border-width:0 1.5px 1.5px 0;}
+
+    /* ══════════ LOCK ══════════ */
+    .lock-card{max-width:440px;margin:0 auto;text-align:center;padding:clamp(1.5rem,6vw,2.8rem) clamp(1.2rem,5vw,2.2rem);}
+
+    .rain-icon{font-size:clamp(2.2rem,9vw,3.5rem);display:block;margin-bottom:.8rem;
+      animation:rainFloat 5s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(232,168,64,.5));}
+    @keyframes rainFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+    .lock-pre{font-size:clamp(.55rem,1.8vw,.68rem);letter-spacing:.45em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:.5rem;font-weight:300;}
+
+    .lock-title{
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(1.6rem,7vw,3rem);font-weight:300;line-height:1.15;
+      color:var(--amber3);margin-bottom:.15rem;letter-spacing:.01em;
+    }
+    .lock-title em{font-style:italic;color:var(--amber2);display:block;}
+
+    .lock-sub{font-size:clamp(.55rem,1.8vw,.66rem);letter-spacing:.4em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:1.8rem;font-weight:200;}
+
+    /* Lyric teaser */
+    .lock-lyric{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(.9rem,3vw,1.1rem);color:rgba(232,168,64,.38);
+      line-height:1.9;margin-bottom:1.8rem;
+      border-left:1px solid rgba(232,168,64,.15);padding-left:1rem;text-align:left;
+    }
+
+    .pw-label{display:block;font-size:.58rem;letter-spacing:.38em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:.5rem;}
+    .pw-input{
+      width:100%;padding:.82rem 1.2rem;
+      background:rgba(232,168,64,.04);
+      border:1px solid rgba(232,168,64,.2);border-radius:3px;
+      color:var(--amber2);font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(1rem,3vw,1.2rem);text-align:center;letter-spacing:.15em;outline:none;
+      transition:all .35s;margin-bottom:.6rem;
+      -webkit-appearance:none;
+    }
+    .pw-input::placeholder{color:rgba(232,168,64,.2);font-size:.95rem;}
+    .pw-input:focus{
+      border-color:rgba(232,168,64,.55);background:rgba(232,168,64,.06);
+      box-shadow:0 0 0 3px rgba(232,168,64,.07),0 0 30px rgba(232,168,64,.08);
+    }
+
+    .err{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+      color:rgba(212,80,112,.7);min-height:1rem;margin-bottom:.7rem;
+      opacity:0;transition:opacity .3s;}
+    .err.show{opacity:1;}
+
+    .btn{
+      width:100%;padding:.88rem;
+      background:linear-gradient(135deg,rgba(232,168,64,.12),rgba(212,80,112,.08));
+      border:1px solid rgba(232,168,64,.3);border-radius:3px;
+      color:var(--amber2);font-family:'Outfit',sans-serif;font-weight:300;
+      font-size:clamp(.65rem,2vw,.75rem);letter-spacing:.35em;text-transform:uppercase;
+      cursor:pointer;transition:all .35s;
+    }
+    .btn:hover{
+      background:linear-gradient(135deg,rgba(232,168,64,.22),rgba(212,80,112,.15));
+      border-color:rgba(232,168,64,.65);
+      box-shadow:0 0 30px rgba(232,168,64,.12);color:#fff;
+    }
+    .btn:active{transform:scale(.985);}
+    .hint{margin-top:1.4rem;font-size:.55rem;letter-spacing:.2em;color:var(--tm);opacity:.3;}
+
+    /* ══════════ MUSIC SCREEN ══════════ */
+    .music-card{max-width:540px;margin:0 auto;padding:clamp(1.5rem,6vw,2.8rem) clamp(1.2rem,5vw,2.2rem);}
+
+    .live{display:inline-flex;align-items:center;gap:7px;padding:.25rem .85rem;
+      border:1px solid rgba(232,168,64,.2);border-radius:999px;
+      font-size:.57rem;letter-spacing:.3em;text-transform:uppercase;color:var(--tm);
+      margin-bottom:1.4rem;animation:fadeUp .7s ease forwards;opacity:0;}
+    .ldot{width:5px;height:5px;border-radius:50%;background:var(--amber);animation:blink 2s ease-in-out infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+    .m-icon{font-size:clamp(2rem,8vw,3.2rem);display:block;margin-bottom:.6rem;
+      animation:fadeUp .7s .04s ease forwards;opacity:0;
+      filter:drop-shadow(0 0 14px rgba(232,168,64,.5));}
+
+    .m-pre{font-size:clamp(.55rem,1.8vw,.68rem);letter-spacing:.45em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:.35rem;animation:fadeUp .7s .08s ease forwards;opacity:0;}
+
+    .m-title{
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(1.6rem,7vw,3.2rem);font-weight:300;line-height:1.1;
+      color:var(--amber3);margin-bottom:.15rem;
+      animation:fadeUp .7s .14s ease forwards;opacity:0;
+    }
+    .m-title em{font-style:italic;color:var(--amber2);display:block;}
+
+    .m-sub{font-size:clamp(.55rem,1.8vw,.66rem);letter-spacing:.4em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:1.5rem;font-weight:200;
+      animation:fadeUp .7s .2s ease forwards;opacity:0;}
+
+    /* Lyric sections */
+    .lyric-main{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(1rem,3.2vw,1.2rem);color:var(--ts);
+      line-height:2;margin-bottom:1.5rem;
+      border-left:1px solid rgba(232,168,64,.2);padding-left:1.1rem;text-align:left;
+      animation:fadeUp .7s .28s ease forwards;opacity:0;
+    }
+    .lyric-main strong{color:var(--amber3);font-style:italic;font-weight:500;}
+    .lyric-main em{color:var(--amber2);font-style:italic;}
+
+    /* Chorus highlight */
+    .chorus-box{
+      background:rgba(232,168,64,.04);
+      border:1px solid rgba(232,168,64,.12);
+      border-radius:3px;padding:1rem 1.2rem;
+      margin-bottom:1.5rem;
+      animation:fadeUp .7s .35s ease forwards;opacity:0;
+    }
+    .chorus-box p{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(.95rem,3vw,1.12rem);color:rgba(253,232,176,.6);
+      line-height:2;
+    }
+    .chorus-box p strong{color:var(--amber3);font-weight:500;}
+    .chorus-label{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;
+      color:var(--tm);margin-bottom:.6rem;display:block;}
+
+    /* Waveform */
+    .wave{display:flex;align-items:center;gap:clamp(2px,.6vw,5px);height:44px;
+      margin-bottom:1.4rem;animation:fadeUp .7s .42s ease forwards;opacity:0;}
+    .wv{flex:1;max-width:5px;border-radius:3px;
+      background:linear-gradient(to top,var(--rose),var(--amber));
+      animation:wvq ease-in-out infinite alternate;}
+    .wv:nth-child(odd){opacity:.35;}.wv:nth-child(even){opacity:.8;}
+    .wv:nth-child(1){animation-duration:.52s}.wv:nth-child(2){animation-duration:.71s;animation-delay:.08s}
+    .wv:nth-child(3){animation-duration:.43s;animation-delay:.16s}.wv:nth-child(4){animation-duration:.82s;animation-delay:.04s}
+    .wv:nth-child(5){animation-duration:.57s;animation-delay:.24s}.wv:nth-child(6){animation-duration:.65s;animation-delay:.12s}
+    .wv:nth-child(7){animation-duration:.48s;animation-delay:.20s}.wv:nth-child(8){animation-duration:.76s;animation-delay:.06s}
+    .wv:nth-child(9){animation-duration:.60s;animation-delay:.18s}.wv:nth-child(10){animation-duration:.87s;animation-delay:.10s}
+    .wv:nth-child(11){animation-duration:.53s;animation-delay:.28s}.wv:nth-child(12){animation-duration:.72s;animation-delay:.14s}
+    .wv:nth-child(13){animation-duration:.46s;animation-delay:.22s}.wv:nth-child(14){animation-duration:.80s;animation-delay:.02s}
+    .wv:nth-child(15){animation-duration:.58s;animation-delay:.30s}.wv:nth-child(16){animation-duration:.67s;animation-delay:.08s}
+    .wv:nth-child(17){animation-duration:.50s;animation-delay:.18s}.wv:nth-child(18){animation-duration:.75s;animation-delay:.12s}
+    .wv:nth-child(19){animation-duration:.62s;animation-delay:.26s}.wv:nth-child(20){animation-duration:.84s;animation-delay:.04s}
+    @keyframes wvq{from{height:4px}to{height:40px}}
+
+    .player{width:100%;margin-bottom:1.5rem;animation:fadeUp .7s .5s ease forwards;opacity:0;}
+    audio{width:100%;border-radius:3px;filter:invert(1) sepia(.5) saturate(2) hue-rotate(10deg);}
+
+    /* Outro */
+    .outro{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(.88rem,2.8vw,1.05rem);color:rgba(232,168,64,.35);
+      line-height:2;text-align:center;
+      padding-top:1.2rem;border-top:1px solid rgba(232,168,64,.08);
+      animation:fadeUp .7s .58s ease forwards;opacity:0;
+    }
+    .outro span{color:rgba(232,168,64,.6);}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:480px){
+      .lyric-main,.chorus-box p{font-size:.95rem;line-height:1.85;}
+      .m-title,.lock-title{font-size:clamp(1.4rem,8vw,2.2rem);}
+      audio{height:36px;}
+      .wave{height:36px;}
+    }
+    @media(max-width:360px){
+      .m-title,.lock-title{font-size:1.35rem;}
+      .lock-lyric{font-size:.85rem;}
+    }
+  </style>
+</head>
+<body>
+<canvas id="bgc"></canvas>
+<canvas id="rainc"></canvas>
+<canvas id="shapec"></canvas>
+
+<!-- ══ LOCK ══ -->
+<div id="lockScreen" class="screen">
+  <div class="card lock-card">
+    <div class="cn tl"></div><div class="cn tr"></div>
+    <div class="cn bl"></div><div class="cn br"></div>
+
+    <span class="rain-icon">🌧</span>
+    <p class="lock-pre">Una canción escrita desde el alma</p>
+    <h1 class="lock-title">Por qué cuesta<em>tanto soltarte</em></h1>
+    <p class="lock-sub">Solo para quien sabe</p>
+
+    <div class="lock-lyric">
+      <p>En un día con lluvia te he recordado,</p>
+      <p>el pasado, los lugares donde he estado…</p>
+    </div>
+
+    <label class="pw-label" for="pwInput">Contraseña</label>
+    <input class="pw-input" id="pwInput" type="text" placeholder="escribe aquí…" autocomplete="off"/>
+    <div class="err" id="err">esa no es la clave… inténtalo de nuevo</div>
+    <button class="btn" onclick="unlock()">Entrar →</button>
+    <p class="hint">solo para quien sabe 🌧</p>
+  </div>
+</div>
+
+<!-- ══ MUSIC ══ -->
+<div id="musicScreen" class="screen">
+  <div class="card music-card">
+    <div class="cn tl"></div><div class="cn tr"></div>
+    <div class="cn bl"></div><div class="cn br"></div>
+
+    <div class="live"><span class="ldot"></span>Reproduciendo ahora</div>
+
+    <span class="m-icon">🌧</span>
+    <p class="m-pre">Una canción escrita desde el alma</p>
+    <h1 class="m-title">Por qué cuesta<em>tanto soltarte</em></h1>
+    <p class="m-sub">Canción original · Letra propia</p>
+
+    <div class="lyric-main">
+      <p>En un día con lluvia te he recordado,</p>
+      <p>el pasado, los lugares donde he estado.</p>
+      <p>He pensado en cómo todo ha cambiado,</p>
+      <p><strong>y en lo mucho que te extraño a mi lado.</strong></p>
+    </div>
+
+    <div class="chorus-box">
+      <span class="chorus-label">✦ Coro</span>
+      <p>Esta vida ya no es la misma,</p>
+      <p>en mis días se apagó la sonrisa.</p>
+      <p>Todo se volvió rutina,</p>
+      <p>desde aquel día en que cambió mi vida.</p>
+      <p><strong>¿Por qué cuesta tanto soltarte?</strong></p>
+    </div>
+
+    <div class="wave">
+      <div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div>
+      <div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div>
+      <div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div>
+      <div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div>
+      <div class="wv"></div><div class="wv"></div><div class="wv"></div><div class="wv"></div>
+    </div>
+
+    <div class="player">
+      <audio controls autoplay>
+        <source src="Por qué cuesta tanto soltarte.mp3" type="audio/mpeg"/>
+      </audio>
+    </div>
+
+    <div class="outro">
+      <p><span>"Esta es mi última carta,</span></p>
+      <p>es mi manera de soltar,</p>
+      <p>no porque no te quiera,</p>
+      <p><span>sino porque debo avanzar…"</span></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const bgc=document.getElementById('bgc'),bc=bgc.getContext('2d');
+const rc=document.getElementById('rainc'),rctx=rc.getContext('2d');
+const sc=document.getElementById('shapec'),sctx=sc.getContext('2d');
+
+function rsz(){
+  [bgc,rc,sc].forEach(c=>{c.width=window.innerWidth;c.height=window.innerHeight;});
+}
+rsz();window.addEventListener('resize',rsz);
+const W=()=>window.innerWidth,H=()=>window.innerHeight;
+
+/* ── RAIN DROPS ── */
+const RAIN=Array.from({length:120},()=>({
+  x:Math.random()*window.innerWidth,
+  y:Math.random()*window.innerHeight,
+  len:Math.random()*18+6,
+  spd:Math.random()*6+4,
+  a:Math.random()*.18+.04,
+  w:Math.random()*.6+.3,
+  angle:.08+Math.random()*.04
+}));
+
+/* ── RIPPLES (rain hitting ground) ── */
+const RIPPLES=[];
+function addRipple(){
+  if(RIPPLES.length<12){
+    RIPPLES.push({x:Math.random()*W(),y:H()*.85+Math.random()*H()*.15,r:0,maxR:Math.random()*30+15,a:.4,spd:Math.random()*.8+.4});
+  }
+}
+
+/* ── FLOATING SHAPES ── */
+const SHAPES=[];
+const shapeColors=['rgba(232,168,64,','rgba(212,80,112,','rgba(253,232,176,','rgba(180,100,80,'];
+function mkShape(){
+  const left=Math.random()>.5;
+  return{
+    x:left?-60:W()+60,y:Math.random()*H(),
+    spd:(Math.random()*.4+.15)*(left?1:-1),
+    vy:(Math.random()-.5)*.25,
+    size:Math.random()*20+8,
+    rot:Math.random()*Math.PI*2,rotSpd:(Math.random()-.5)*.015,
+    type:['note','heart','drop','circle','diamond'][Math.floor(Math.random()*5)],
+    col:shapeColors[Math.floor(Math.random()*shapeColors.length)],
+    a:Math.random()*.18+.05,
+    ph:Math.random()*Math.PI*2,psp:.012+Math.random()*.018
+  };
+}
+for(let i=0;i<16;i++){const s=mkShape();s.x=Math.random()*W();s.y=Math.random()*H();SHAPES.push(s);}
+
+/* ── DUST PARTICLES ── */
+const DUST=Array.from({length:50},()=>({
+  x:Math.random(),y:Math.random(),r:Math.random()*1.2+.2,
+  vx:(Math.random()-.5)*.0001,vy:(Math.random()-.5)*.0001,
+  ph:Math.random()*Math.PI*2,sp:.004+Math.random()*.008,
+  t:Math.random()>.5?0:1
+}));
+
+function drawHeart(ctx,x,y,size,rot){
+  ctx.save();ctx.translate(x,y);ctx.rotate(rot);
+  const s=size*.6;
+  ctx.beginPath();
+  ctx.moveTo(0,s*.4);
+  ctx.bezierCurveTo(-s,-s*.2,-s*2,s*.6,0,s*1.4);
+  ctx.bezierCurveTo(s*2,s*.6,s,-s*.2,0,s*.4);
+  ctx.restore();
+}
+function drawNote(ctx,x,y,size,rot){
+  ctx.save();ctx.translate(x,y);ctx.rotate(rot);
+  ctx.beginPath();ctx.arc(0,0,size*.5,0,Math.PI*2);
+  ctx.moveTo(size*.5,-size*.1);ctx.lineTo(size*.5,-size*1.2);
+  ctx.lineTo(size*1.2,-size*1);ctx.lineTo(size*1.2,-size*.2);
+  ctx.restore();
+}
+function drawDrop(ctx,x,y,size,rot){
+  ctx.save();ctx.translate(x,y);ctx.rotate(rot);
+  ctx.beginPath();
+  ctx.moveTo(0,-size);
+  ctx.bezierCurveTo(size*.6,-size*.4,size*.6,size*.4,0,size*.8);
+  ctx.bezierCurveTo(-size*.6,size*.4,-size*.6,-size*.4,0,-size);
+  ctx.restore();
+}
+function drawDiamond(ctx,x,y,size,rot){
+  ctx.save();ctx.translate(x,y);ctx.rotate(rot);
+  ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(size*.55,0);ctx.lineTo(0,size);ctx.lineTo(-size*.55,0);ctx.closePath();
+  ctx.restore();
+}
+
+let t=0;
+function frame(){
+  t+=.008;
+  const w=W(),h=H();
+
+  /* BG */
+  bc.clearRect(0,0,w,h);
+  const bg=bc.createRadialGradient(w*.5,h*.3,0,w*.5,h*.6,h);
+  bg.addColorStop(0,'rgba(20,10,8,.96)');
+  bg.addColorStop(.6,'rgba(8,4,12,.98)');
+  bg.addColorStop(1,'rgba(2,1,6,1)');
+  bc.fillStyle=bg;bc.fillRect(0,0,w,h);
+
+  // Warm glow center
+  const wg=bc.createRadialGradient(w*.5,h*.4,0,w*.5,h*.5,w*.55);
+  wg.addColorStop(0,'rgba(140,80,20,.09)');wg.addColorStop(1,'rgba(0,0,0,0)');
+  bc.fillStyle=wg;bc.fillRect(0,0,w,h);
+
+  // Rose glow bottom
+  const rg=bc.createRadialGradient(w*.5,h,0,w*.5,h,w*.5);
+  rg.addColorStop(0,'rgba(100,30,50,.07)');rg.addColorStop(1,'rgba(0,0,0,0)');
+  bc.fillStyle=rg;bc.fillRect(0,0,w,h);
+
+  /* DUST */
+  DUST.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=1;if(p.x>1)p.x=0;if(p.y<0)p.y=1;if(p.y>1)p.y=0;
+    const a=.04+.12*(0.5+0.5*Math.sin(t*p.sp+p.ph));
+    bc.beginPath();bc.arc(p.x*w,p.y*h,p.r,0,Math.PI*2);
+    bc.fillStyle=p.t===0?`rgba(232,168,64,${a})`:`rgba(212,80,112,${a})`;
+    bc.fill();
+  });
+
+  /* Horizon glow lines */
+  for(let i=0;i<3;i++){
+    bc.beginPath();
+    const gy=h*.78+i*18+Math.sin(t*.4+i)*5;
+    for(let x=0;x<=w;x+=3){
+      const y=gy+Math.sin(x*.015+t*.6+i*.8)*8;
+      x===0?bc.moveTo(x,y):bc.lineTo(x,y);
+    }
+    bc.strokeStyle=`rgba(${i===0?'232,168,64':i===1?'212,80,112':'180,120,60'},.05)`;bc.lineWidth=1;bc.stroke();
+  }
+
+  /* RAIN */
+  rctx.clearRect(0,0,w,h);
+  RAIN.forEach(r=>{
+    r.y+=r.spd;r.x+=r.spd*r.angle;
+    if(r.y>h+20){r.y=-20;r.x=Math.random()*w;}
+    if(r.x>w+20)r.x=-20;
+    const grd=rctx.createLinearGradient(r.x,r.y,r.x-r.len*r.angle,r.y-r.len);
+    grd.addColorStop(0,`rgba(180,210,255,${r.a})`);
+    grd.addColorStop(1,'rgba(180,210,255,0)');
+    rctx.beginPath();rctx.moveTo(r.x,r.y);rctx.lineTo(r.x-r.len*r.angle,r.y-r.len);
+    rctx.strokeStyle=grd;rctx.lineWidth=r.w;rctx.stroke();
+    // Occasionally spawn ripple
+    if(r.y>h*.82&&Math.random()>.98)addRipple();
+  });
+
+  // Ripples
+  for(let i=RIPPLES.length-1;i>=0;i--){
+    const rp=RIPPLES[i];rp.r+=rp.spd;rp.a-=.018;
+    if(rp.a<=0){RIPPLES.splice(i,1);continue;}
+    rctx.beginPath();rctx.ellipse(rp.x,rp.y,rp.r,rp.r*.3,0,0,Math.PI*2);
+    rctx.strokeStyle=`rgba(180,210,255,${rp.a})`;rctx.lineWidth=.8;rctx.stroke();
+  }
+
+  /* SHAPES */
+  sctx.clearRect(0,0,w,h);
+  SHAPES.forEach(s=>{
+    s.x+=s.spd;s.y+=s.vy;s.rot+=s.rotSpd;s.ph+=s.psp;
+    if(s.spd>0&&s.x>w+80){const ns=mkShape();ns.x=-60;Object.assign(s,ns);}
+    if(s.spd<0&&s.x<-80){const ns=mkShape();ns.x=w+60;ns.spd=-Math.abs(ns.spd);Object.assign(s,ns);}
+    if(s.y<-80)s.y=h+80;if(s.y>h+80)s.y=-80;
+    const pa=s.a*(0.5+0.5*Math.sin(s.ph));
+    sctx.strokeStyle=s.col+pa+')';sctx.lineWidth=1;
+    sctx.shadowBlur=8;sctx.shadowColor=s.col+'.35)';
+    switch(s.type){
+      case'heart':drawHeart(sctx,s.x,s.y,s.size,s.rot);break;
+      case'note':drawNote(sctx,s.x,s.y,s.size,s.rot);break;
+      case'drop':drawDrop(sctx,s.x,s.y,s.size,s.rot);break;
+      case'diamond':drawDiamond(sctx,s.x,s.y,s.size,s.rot);break;
+      case'circle':sctx.beginPath();sctx.arc(s.x,s.y,s.size,0,Math.PI*2);break;
+    }
+    sctx.stroke();sctx.shadowBlur=0;
+  });
+
+  requestAnimationFrame(frame);
+}
+frame();
+
+/* ── PASSWORD ── */
+function unlock(){
+  const v=document.getElementById('pwInput').value.trim();
+  const e=document.getElementById('err');
+  if(['leo','Leo','LEO'].includes(v)){
+    document.getElementById('lockScreen').style.display='none';
+    const ms=document.getElementById('musicScreen');
+    ms.style.display='flex';
+    window.scrollTo(0,0);
+  } else {
+    e.classList.add('show');
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter')unlock();
+  document.getElementById('err').classList.remove('show');
+});
+</script>
+</body>
+</html>
